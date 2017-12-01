@@ -49,6 +49,10 @@ public class PFMQZ6
                 {
                     sumCount++;
                 }
+                else
+                {
+                    sumCount = 0;
+                }
             }
             
             ttlNumRolls += rolls;
