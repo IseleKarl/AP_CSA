@@ -14,20 +14,19 @@ public class AverageMethods
             values.add(element);
         }
         
-        ArrayList<Integer> modes = new ArrayList<Integer>();
-        
         ArrayList<Integer> mutableCopy = new ArrayList<Integer>();
         for (int element : v)
         {
             mutableCopy.add(element);
         }
         
+        ArrayList<Integer> modes = new ArrayList<Integer>();
+        
         ArrayList<Integer> frequencies = new ArrayList<Integer>(mutableCopy.size());
         int maxFrequency = 0;
-        
         for (int i = 0; i < mutableCopy.size(); i++)
         {
-            frequencies.add(i, Collections.frequency(mutableCopy, mutableCopy.get(i)));
+            frequencies.add(Collections.frequency(mutableCopy, mutableCopy.get(i)));
         }
         
         for (int i = 0; i < frequencies.size(); i++)
@@ -40,6 +39,7 @@ public class AverageMethods
             if (Collections.frequency(mutableCopy, mutableCopy.get(i)) > 1)
             {
                 mutableCopy.remove(i);
+                i--;
             }
         }
         
