@@ -1,8 +1,9 @@
-
+//Neil Wise, modified by Karl Isele
 
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import javax.swing.*;
 //import static GUIFramework.*;
@@ -10,6 +11,8 @@ import javax.swing.*;
 public class GUIProgram implements GUIApp
 {
     int [][] chips;
+    ArrayList<int[]> capturedChips;
+    ArrayList<int[]> capturedGroup;
     static final int BLANK=0;
     static final int BLACK=1;
     static final int WHITE=2;
@@ -45,13 +48,19 @@ public class GUIProgram implements GUIApp
             if(isValidTurn(turn,r,c))
             {
                 chips[r][c]=turn;
-                flipCells(r,c);
-                nextTurn();
+                
+                flipCells(turn,r,c);
+                System.out.println("player chip: [" + r + ", " + c + "]");
+                System.out.println("captured chips: " + Arrays.toString(capturedChips.get(0)));
+                
+                turn = oppositeColor(turn);
             }
-            if(!moreValidTurns())
-                gameOver = true;            
+            if(!moreValidTurns(turn))
+            {
+                gameOver = true;
+                System.out.println("game over");
+            }
         }
-
     }
 
     public void processKey(KeyEvent e)
@@ -65,7 +74,6 @@ public class GUIProgram implements GUIApp
             System.out.println((int)gameTime); 
             gameOver = true;
         }
-   
     }
 
     public void draw(Graphics2D g2)
@@ -98,6 +106,9 @@ public class GUIProgram implements GUIApp
             g2.setFont(bigFont);
             g2.drawString("Game Over!", GUIFramework.SCREEN_WIDTH/4,
                     GUIFramework.SCREEN_HEIGHT/4);
+            String winner = winner();
+            g2.drawString(winner + " wins", GUIFramework.SCREEN_WIDTH/4,
+                    GUIFramework.SCREEN_HEIGHT/3);
         }
     }
     
@@ -107,13 +118,13 @@ public class GUIProgram implements GUIApp
         return cellSize;
     }
     
-    // alternates between BLACK and WHITE turn
-    public void nextTurn()
+    // returns the opposite color
+    public int oppositeColor(int color)
     {
-        if(turn==BLACK)
-            turn=WHITE;
+        if(color==BLACK)
+            return WHITE;
         else
-            turn=BLACK;
+            return BLACK;
     }
     
     /*
@@ -123,62 +134,260 @@ public class GUIProgram implements GUIApp
     */
     public boolean isValidTurn(int t, int r, int c)
     {
-        boolean valid = false;
-        
-        /*if (chips[r][c]==BLANK && surroundsChips(t,r,c))
-        {
-            valid = true;
-        }*/
-        
-        if (chips[r][c] == BLACK)
-            valid = true;
-        
-        return valid;
+        int neighbor = oppositeColor(t);        
+        return chips[r][c]==BLANK 
+                && hasValidNeighbor(neighbor,r,c) 
+                && !capturedChips(t,r,c).isEmpty();
     }
     
-    public boolean surroundsChips(int t, int r, int c)
+    public boolean hasValidNeighbor(int color, int r, int c)
     {
-        boolean surroundsChips = false;
-        int opponentChip;
-        int adjacentChip;
+        boolean isOK = false; 
+        // check the 8 neighbors for the required color
+        if(checkColor(color,r+1,c) || checkColor(color,r-1,c) ||
+           checkColor(color,r,c+1) || checkColor(color,r,c-1) ||
+           checkColor(color,r-1,c-1) || checkColor(color,r-1,c+1) ||
+           checkColor(color,r+1,c-1) || checkColor(color,r+1,c+1))
+                isOK=true;
+        return isOK;
+    }
+    
+    // returns true if cell r,c contains the given color
+    public boolean checkColor(int color, int r, int c)
+    {
+        // take advantage of short-circuit evaluation!
+        return r<SIZE && c<SIZE && r>=0 && c>=0 
+                && chips[r][c]==color;
+    }
+    
+    // return true if placing color in cell r,c will result in one or more 
+    // cells flipping their color
+    public ArrayList<int[]> capturedChips(int color, int r, int c)
+    {
+        capturedChips = new ArrayList();
+        String capturedGroupString;
         
-        if (turn == BLACK)
+        for (int d = 0; d < 8; d++)
         {
-            opponentChip = WHITE;
-        }
-        else
-        {
-            opponentChip = BLACK;
-        }
-        
-        if (!surroundsChips)
-        {
-            int i = 1;
-            do
+            capturedGroupString = "";
+            
+            checkDirection(color,r,c,d);
+            for (int i = 0; i < capturedGroup.size(); i++)
             {
-                adjacentChip = chips[r+i][c];
-                i++;
+                capturedGroupString += Arrays.toString(capturedGroup.get(i));
+                capturedChips.add(capturedGroup.get(i));
             }
-            while(opponentChip == adjacentChip);
+            
+            System.out.println("captured group: " + capturedGroupString);
         }
         
-        return surroundsChips;
+        return capturedChips;
+    }
+    
+    public void checkDirection(int color, int r, int c, int d)
+    {
+        capturedGroup = new ArrayList();
+        
+        int[] adjacentChip = new int[2];
+        ArrayList<int[]> adjacentOpponentChips = new ArrayList();
+        
+        int ri = 0;
+        int ci = 0;
+        
+        boolean isOpponentChipFound = true;
+        boolean isPlayerChipFound = false;
+        
+        if (d < 2)  //row group
+        {
+            while (c + ci >= 0 && c + ci < SIZE && !isPlayerChipFound && isOpponentChipFound)
+            {
+                ci += Math.pow(-1,((d+1)%2));   //if d is even then subtract increments
+                
+                adjacentChip[0] = r + ri;
+                adjacentChip[1] = c + ci;
+                
+                System.out.print("adjacentChip is: ");
+                System.out.println(Arrays.toString(adjacentChip));
+                
+                if (c + ci >= 0 && c + ci < SIZE)
+                {
+                    if (chips[adjacentChip[0]][adjacentChip[1]] == color)
+                    {
+                        isPlayerChipFound = true;
+                    }
+                    else
+                    {
+                        if (chips[adjacentChip[0]][adjacentChip[1]] == oppositeColor(color))
+                        { 
+                            adjacentOpponentChips.add(new int[]{adjacentChip[0],adjacentChip[1]});
+                            System.out.println("captured");
+                        }
+                        else
+                            isOpponentChipFound = false;
+                    }
+                }
+            }
+            
+            if (isPlayerChipFound)
+            {
+                capturedGroup = adjacentOpponentChips;
+            }
+        } 
+        else if (d < 4) //column group
+        {
+            while (r + ri >= 0 && r + ri < SIZE && !isPlayerChipFound && isOpponentChipFound)
+            {   
+                ri += Math.pow(-1,((d+1)%2));
+                
+                adjacentChip[0] = r + ri;
+                adjacentChip[1] = c + ci;
+                
+                if (r + ri >= 0 && r + ri < SIZE)
+                {
+                    if (chips[adjacentChip[0]][adjacentChip[1]] == color)
+                    {
+                        isPlayerChipFound = true;
+                    }
+                    else
+                    {
+                        if (chips[adjacentChip[0]][adjacentChip[1]] == oppositeColor(color))
+                        { 
+                            adjacentOpponentChips.add(new int[]{adjacentChip[0],adjacentChip[1]});
+                            System.out.println("captured");
+                        }
+                        else
+                            isOpponentChipFound = false;
+                    }
+                }
+            }
+            
+            if (isPlayerChipFound)
+            {
+                capturedGroup = adjacentOpponentChips;
+            }
+        }
+        else if (d < 6) //y=x group
+        {
+            while (r + ri >= 0 && c + ci >= 0 && r + ri < SIZE && c + ci < SIZE && !isPlayerChipFound && isOpponentChipFound)
+            {
+                ri += Math.pow(-1,((d+1)%2));
+                ci += Math.pow(-1,((d+1)%2));
+                
+                adjacentChip[0] = r + ri;
+                adjacentChip[1] = c + ci;
+                
+                if (r + ri >= 0 && r + ri < SIZE && c + ci >= 0 && c + ci < SIZE)
+                {
+                    if (chips[adjacentChip[0]][adjacentChip[1]] == color)
+                    {
+                        isPlayerChipFound = true;
+                    }
+                    else
+                    {
+                        if (chips[adjacentChip[0]][adjacentChip[1]] == oppositeColor(color))
+                        { 
+                            adjacentOpponentChips.add(new int[]{adjacentChip[0],adjacentChip[1]});
+                            System.out.println("captured");
+                        }
+                        else
+                            isOpponentChipFound = false;
+                    }
+                }
+            }
+            
+            if (isPlayerChipFound)
+            {
+                capturedGroup = adjacentOpponentChips;
+            }
+        }
+        else    //y=-x group
+        {
+            while (r + ri >= 0 && c + ci >= 0 && r + ri < SIZE && c + ci < SIZE && !isPlayerChipFound && isOpponentChipFound)
+            {
+                ri += Math.pow(-1,((d)%2));
+                ci += Math.pow(-1,((d+1)%2));
+                
+                adjacentChip[0] = r + ri;
+                adjacentChip[1] = c + ci;
+                
+                if (r + ri >= 0 && r + ri < SIZE && c + ci >= 0 && c + ci < SIZE)
+                {
+                    if (chips[adjacentChip[0]][adjacentChip[1]] == color)
+                    {
+                        isPlayerChipFound = true;
+                    }
+                    else
+                    {
+                        if (chips[adjacentChip[0]][adjacentChip[1]] == oppositeColor(color))
+                        { 
+                            adjacentOpponentChips.add(new int[]{adjacentChip[0],adjacentChip[1]});
+                            System.out.println("captured");
+                        }
+                        else
+                            isOpponentChipFound = false;
+                    }
+                }
+            }
+            
+            if (isPlayerChipFound)
+            {
+                capturedGroup = adjacentOpponentChips;
+            }
+        }
     }
     
     // Makes the required flips to "surrounded" cells
-    public void flipCells(int r, int c)
+    public void flipCells(int t, int r, int c)
     {
+        for (int i = 0; i < capturedChips.size(); i++)
+        {
+            chips[(capturedChips.get(i))[0]][(capturedChips.get(i))[1]] = t;
+        }
+    }
+
+    // Returns true when there are no more valid moves remaining on the board
+    public boolean moreValidTurns(int t)
+    {
+        boolean validTurn = false;
+        int r = 0;
+        int c;
         
+        while (r < SIZE && !validTurn)
+        {
+            c = 0;
+            while (c < SIZE && !validTurn)
+            {
+                validTurn = isValidTurn(t,r,c);
+                c++;
+            }
+            r++;
+        }
+        return validTurn;
     }
     
-    /* 
-        Returns true when there are no more valid moves remaining
-        on the board
-        You must at minimum check that there remains at least on
-        BLANK cell remaining
-    */
-    public boolean moreValidTurns()
+    public String winner()
     {
-        return true;
+        String winner = "White";
+        int numWhite = 0;
+        
+        int r = 0;
+        int c;
+        
+        while (r < SIZE && numWhite <= 32)
+        {
+            c = 0;
+            while (c < SIZE && numWhite <= 32)
+            {
+                if (chips[r][c] == WHITE)
+                    numWhite++;
+                c++;
+            }
+            r++;
+        }
+        
+        if (numWhite < 32)
+            winner = "Black";
+        
+        return winner;
     }
 }
