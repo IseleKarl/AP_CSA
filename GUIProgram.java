@@ -22,8 +22,10 @@ public class GUIProgram implements GUIApp
     Font bigFont;
     double gameTime;
     
+    Rectangle rect;
+    
     public GUIProgram()
-    { 
+    {
         chips = new int[SIZE][SIZE];
         chips[SIZE/2-1][SIZE/2-1]=WHITE;
         chips[SIZE/2-1][SIZE/2]=BLACK;
@@ -32,6 +34,8 @@ public class GUIProgram implements GUIApp
         
         bigFont = new Font("Courier", Font.BOLD, 55);
         turn = BLACK;
+        
+        rect = new Rectangle(0,0,GUIFramework.SCREEN_WIDTH,GUIFramework.SCREEN_HEIGHT);
     }
 
     public void update(double elapsed)
@@ -77,7 +81,10 @@ public class GUIProgram implements GUIApp
     }
 
     public void draw(Graphics2D g2)
-    {
+    {/*
+        g2.setColor(Color.BLUE);
+        g2.fill(rect);*/
+        
         // draw the grid lines
         g2.setColor(Color.black);
         int cellSize = getCellSize();       
@@ -369,6 +376,7 @@ public class GUIProgram implements GUIApp
     {
         String winner = "White";
         int numWhite = 0;
+        int numBlack = 0;
         
         int r = 0;
         int c;
@@ -380,12 +388,14 @@ public class GUIProgram implements GUIApp
             {
                 if (chips[r][c] == WHITE)
                     numWhite++;
+                else if (chips[r][c] == BLACK)
+                    numBlack++;
                 c++;
             }
             r++;
         }
         
-        if (numWhite < 32)
+        if (numWhite < numBlack)
             winner = "Black";
         
         return winner;
