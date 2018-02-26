@@ -17,7 +17,7 @@ import java.util.ListIterator;
 
 public class GUIFramework extends JPanel implements Runnable, KeyListener, MouseListener
 {
-    public static final int SCREEN_WIDTH = 600;
+    public static final int SCREEN_WIDTH = 800;
     public static final int SCREEN_HEIGHT = 600;
     
     /* Create a new thread for the Drawing, Updating, and Listeners to operate on */
@@ -140,7 +140,7 @@ public class GUIFramework extends JPanel implements Runnable, KeyListener, Mouse
             guiGame.update(elapsed);
 
             // Tell the window to redraw itself
-            //repaint();
+            repaint();
 
             // Try to stop the game for 10 milliseconds to save CPU cycles
             try
@@ -159,7 +159,6 @@ public class GUIFramework extends JPanel implements Runnable, KeyListener, Mouse
     public void keyPressed(KeyEvent e)
     {
         guiGame.processKey(e);
-        repaint();
     }
     public void keyReleased(KeyEvent e)
     {
@@ -168,12 +167,12 @@ public class GUIFramework extends JPanel implements Runnable, KeyListener, Mouse
     public void keyTyped(KeyEvent e)
     {
     }
+
     
     /* Sign contract with MouseListener */
     public void mouseClicked(MouseEvent e) 
     {
         guiGame.processMouse(e);
-        repaint();
     }
     public void mouseEntered(MouseEvent e) {}
     public void mouseExited(MouseEvent e) {}
