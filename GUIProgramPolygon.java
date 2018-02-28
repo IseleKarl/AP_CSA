@@ -8,13 +8,13 @@ import javax.swing.*;
 
 public class GUIProgramPolygon implements GUIApp
 {
-    ArrayList<Point> points;
-    int numPoints;
+    Polygon polygon;
+    boolean enterPressed;
     
     public GUIProgramPolygon()
     {
-        points = new ArrayList();
-        numPoints = 0;
+        polygon = new Polygon();
+        enterPressed = false;
     }
 
     public void update(double elapsed)
@@ -24,35 +24,24 @@ public class GUIProgramPolygon implements GUIApp
     
     public void processMouse(MouseEvent e)
     {
-        points.add(e.getPoint());
-        numPoints++;
+        if (!polygon.isClosed(enterPressed))
+            polygon.add(e.getPoint());
     }
 
     public void processKey(KeyEvent e)
     {
+        if (e.getKeyCode() == KeyEvent.VK_P && !polygon.isClosed(enterPressed))
+            System.out.println(polygon.toString());
         
-    }
-    
-    public void add(Point p)
-    {
-        points.add(p);
-    }
-    
-    public boolean isClosed()
-    {
-        boolean isClosed = false;
-        double d;
+        if (e.getKeyCode() == KeyEvent.VK_C && !polygon.isClosed(enterPressed))
+            polygon.clear();
         
-        d = points.get(0).distance(points.get(numPoints));
-        
-        if (d < 50)
-            isClosed = true;
-        
-        return isClosed;
+        if (e.getKeyCode() == KeyEvent.VK_ENTER && !polygon.isClosed(enterPressed))
+            enterPressed = true;
     }
 
     public void draw(Graphics2D g2)
     {
-        
+        polygon.draw(g2,enterPressed);
     }
 }
