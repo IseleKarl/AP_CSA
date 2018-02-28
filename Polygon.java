@@ -1,9 +1,7 @@
+//Karl Isele
 
 import java.awt.*;
 import java.util.*;
-
-
-//Karl Isele
 
 public class Polygon 
 {
